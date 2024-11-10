@@ -1,188 +1,192 @@
-using System;
-
-class Program
+namespace ConsoleApp1
 {
-    static void Main()
+    using System;
+
+    internal class Program
     {
-        int width = 10;
-        int height = 10;
-        int bombCount = 15;
-
-        char[,] board = InitializeBoard(width, height, bombCount);
-        char[,] displayBoard = InitializeDisplayBoard(width, height);
-
-        bool gameOver = false;
-
-        while (!gameOver)
+        private static void Main()
         {
-            DisplayBoard(displayBoard);
-            Console.WriteLine("Podaj współrzędne (x, y) do odkrycia (np. 2 3): ");
-            string[] input = Console.ReadLine().Split(' ');
+            int width = 10;
+            int height = 10;
+            int bombCount = 15;
 
-            if (input.Length == 2 && int.TryParse(input[0], out int x) && int.TryParse(input[1], out int y))
+            char[,] board = InitializeBoard(width, height, bombCount);
+            char[,] displayBoard = InitializeDisplayBoard(width, height);
+
+            bool gameOver = false;
+
+            while (!gameOver)
             {
-                if (x >= 0 && x < width && y >= 0 && y < height && displayBoard[y, x] == ' ')
+                DisplayBoard(displayBoard);
+                Console.WriteLine("Podaj współrzędne (x, y) do odkrycia (np. 2 3): ");
+                string userInput = Console.ReadLine() ?? string.Empty;
+                string[] input = userInput.Split(' ');
+
+                if (input.Length == 2 && int.TryParse(input[0], out int x) && int.TryParse(input[1], out int y))
                 {
-                    if (board[y, x] == '*')
+                    if (x >= 0 && x < width && y >= 0 && y < height && displayBoard[y, x] == ' ')
                     {
-                        Console.WriteLine("Boom! Koniec gry.");
-                        gameOver = true;
+                        if (board[y, x] == '*')
+                        {
+                            Console.WriteLine("Boom! Koniec gry.");
+                            gameOver = true;
+                        }
+                        else
+                        {
+                            int count = CountAdjacentBombs(board, x, y);
+                            displayBoard[y, x] = count.ToString()[0];
+
+                            if (count >= 0)
+                            {
+                                // Odkryj sąsiadujące puste pola.
+                                ExpandZeros(board, displayBoard, x, y);
+                            }
+
+                            if (CheckWin(displayBoard, bombCount))
+                            {
+                                Console.WriteLine("Gratulacje! Wygrałeś!");
+                                gameOver = true;
+                            }
+                        }
                     }
                     else
                     {
-                        int count = CountAdjacentBombs(board, x, y);
-                        displayBoard[y, x] = count.ToString()[0];
-
-                        if (count /*??*/ 0)
-                        {
-                            // Odkryj sąsiadujące puste pola.
-                            ExpandZeros(board, displayBoard, x, y);
-                        }
-
-                        if (CheckWin(displayBoard, bombCount))
-                        {
-                            Console.WriteLine("Gratulacje! Wygrałeś!");
-                            gameOver = true;
-                        }
+                        Console.WriteLine("Nieprawidłowe współrzędne. Spróbuj ponownie.");
                     }
                 }
                 else
                 {
-                    Console.WriteLine("Nieprawidłowe współrzędne. Spróbuj ponownie.");
+                    Console.WriteLine("Nieprawidłowe dane wejściowe. Spróbuj ponownie.");
                 }
             }
-            else
+        }
+
+        private static char[,] InitializeBoard(int width, int height, int bombCount)
+        {
+            char[,] board = new char[height, width];
+            Random random = new();
+
+            // Wypełnij planszę bombami.
+            for (int i = 0; i < bombCount; i++)
             {
-                Console.WriteLine("Nieprawidłowe dane wejściowe. Spróbuj ponownie.");
+                int x, y;
+                do
+                {
+                    x = random.Next(0, width);
+                    y = random.Next(0, height);
+                } while (board[y, x] == '*');
+
+                board[y, x] = '*';
             }
-        }
-    }
 
-    static char[,] InitializeBoard(int width, int height, int bombCount)
-    {
-        char[,] board = new char[height, width];
-        Random random = /*??*/
-
-        // Wypełnij planszę bombami.
-        for (int i = 0; i < bombCount; i++)
-        {
-            int x, y;
-            do
-            {
-                x = random.Next(0, width);
-                y = random.Next(0, height);
-            } while (board[y, x] == '*');
-
-            board[y, x] = '*';
+            return board;
         }
 
-        return board;
-    }
-
-    static char[,] InitializeDisplayBoard(int width, int height)
-    {
-        char[,] displayBoard = new char[height, width];
-
-        // Wypełnij planszę niewidocznymi polami.
-        for (int i = 0; i < height; i++)
+        private static char[,] InitializeDisplayBoard(int width, int height)
         {
-            for (int j = 0; j < width; j++)
+            char[,] displayBoard = new char[height, width];
+
+            // Wypełnij planszę niewidocznymi polami.
+            for (int i = 0; i < height; i++)
             {
-                displayBoard[i, j] = ' ';
+                for (int j = 0; j < width; j++)
+                {
+                    displayBoard[i, j] = ' ';
+                }
             }
+
+            return displayBoard;
         }
 
-        /*??*/ displayBoard;
-    }
-
-    static void DisplayBoard(char[,] board)
-    {
-        Console.Clear();
-        int height = board.GetLength(0);
-        int width = board.GetLength(1);
-
-        Console.WriteLine("Plansza Saper:");
-        Console.Write("  ");
-
-        for (int i = 0; i < width; i++)
+        private static void DisplayBoard(char[,] board)
         {
-            Console.Write($"{i} ");
-        }
+            Console.Clear();
+            int height = board.GetLength(0);
+            int width = board.GetLength(1);
 
-        Console.WriteLine();
+            Console.WriteLine("Plansza Saper:");
+            Console.Write("  ");
 
-        for (int i = 0; i < height; i++)
-        {
-            Console.Write($"{i} ");
-
-            for (int j = 0; j < width; j++)
+            for (int i = 0; i < width; i++)
             {
-                Console.Write($"{board[i, j]} ");
+                Console.Write($"{i} ");
             }
 
             Console.WriteLine();
-        }
-    }
 
-    static int CountAdjacentBombs(char[,] board, int x, int y)
-    {
-        int count = 0;
-        int height = board.GetLength(0);
-        int width = board.GetLength(1);
-
-        for (int i = Math.Max(0, y - 1); i <= Math.Min(height - 1, y + 1); i++)
-        {
-            for (int j = Math.Max(0, x - 1); j <= /*??*/(width - 1, x + 1); j++)
+            for (int i = 0; i < height; i++)
             {
-                if (board[i, j] == '*')
+                Console.Write($"{i} ");
+
+                for (int j = 0; j < width; j++)
                 {
-                    count++;
+                    Console.Write($"{board[i, j]} ");
                 }
+
+                Console.WriteLine();
             }
         }
 
-        return count;
-    }
-
-    static void ExpandZeros(char[,] board, char[,] displayBoard, int x, int y)
-    {
-        int height = board.GetLength(0);
-        int width = board.GetLength(1);
-
-        for (int i = Math.Max(0, y - 1); i <= Math.Min(height - 1, y + 1); i++)
+        private static int CountAdjacentBombs(char[,] board, int x, int y)
         {
-            for (int j = Math.Max(0, x - 1); j <= Math.Min(width - 1, x + 1); j++)
-            {
-                if (displayBoard[i, j] == ' ' && board[i, j] != '*')
-                {
-                    displayBoard[i, j] = CountAdjacentBombs(board, j, i).ToString()[0];
+            int count = 0;
+            int height = board.GetLength(0);
+            int width = board.GetLength(1);
 
-                    if (displayBoard[i, j] == '0')
+            for (int i = Math.Max(0, y - 1); i <= Math.Min(height - 1, y + 1); i++)
+            {
+                for (int j = Math.Max(0, x - 1); j <= Math.Min(width - 1, x + 1); j++)
+                {
+                    if (board[i, j] == '*')
                     {
-                        ExpandZeros(board, displayBoard, j, i);
+                        count++;
+                    }
+                }
+            }
+
+            return count;
+        }
+
+        private static void ExpandZeros(char[,] board, char[,] displayBoard, int x, int y)
+        {
+            int height = board.GetLength(0);
+            int width = board.GetLength(1);
+
+            for (int i = Math.Max(0, y - 1); i <= Math.Min(height - 1, y + 1); i++)
+            {
+                for (int j = Math.Max(0, x - 1); j <= Math.Min(width - 1, x + 1); j++)
+                {
+                    if (displayBoard[i, j] == ' ' && board[i, j] != '*')
+                    {
+                        displayBoard[i, j] = CountAdjacentBombs(board, j, i).ToString()[0];
+
+                        if (displayBoard[i, j] == '0')
+                        {
+                            ExpandZeros(board, displayBoard, j, i);
+                        }
                     }
                 }
             }
         }
-    }
 
-    static bool CheckWin(char[,] displayBoard, int bombCount)
-    {
-        int uncoveredCount = 0;
-        int width = displayBoard.GetLength(1);
-        int height = displayBoard.GetLength(0);
-
-        for (int i = 0; i < height; i++)
+        private static bool CheckWin(char[,] displayBoard, int bombCount)
         {
-            for (int j = 0; j < width; j++)
+            int uncoveredCount = 0;
+            int width = displayBoard.GetLength(1);
+            int height = displayBoard.GetLength(0);
+
+            for (int i = 0; i < height; i++)
             {
-                if (displayBoard[i, j] != ' ' && displayBoard[i, j] != '*')
+                for (int j = 0; j < width; j++)
                 {
-                    uncoveredCount++;
+                    if (displayBoard[i, j] != ' ' && displayBoard[i, j] != '*')
+                    {
+                        uncoveredCount++;
+                    }
                 }
             }
-        }
 
-        return uncoveredCount == /* ??*/ * height - bombCount;
+            return uncoveredCount == width * height - bombCount;
+        }
     }
 }
